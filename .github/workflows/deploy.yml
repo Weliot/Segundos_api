@@ -41,7 +41,7 @@ jobs:
       - name: Wait for application to be ready
         run: |
           for i in {1..30}; do
-            if curl -s http://localhost:8080/Segundos_api/api-docs > /dev/null; then
+            if curl -sf http://localhost:8080/Segundos_api/api-docs > /dev/null; then
               echo "Application is ready!"
               exit 0
             fi
@@ -103,7 +103,7 @@ jobs:
           mkdir -p swagger-docs
           
           # Get full API docs
-          curl -s http://localhost:8080/Segundos_api/api-docs > swagger-docs/openapi.json
+          curl -sf http://localhost:8080/Segundos_api/api-docs > swagger-docs/openapi.json
           
           # Create Swagger UI HTML with EMBEDDED spec
           cat > swagger-docs/index.html << 'ENDHTML'
