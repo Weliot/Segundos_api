@@ -105,7 +105,7 @@ jobs:
           # Get full API docs
           curl -s http://localhost:8080/Segundos_api/api-docs > swagger-docs/openapi.json
           
-          # Create Swagger UI HTML with embedded OpenAPI spec
+          # Create Swagger UI HTML with absolute paths for GitHub Pages
           cat > swagger-docs/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -113,7 +113,7 @@ jobs:
               <meta charset="UTF-8">
               <title>Segundos API - Swagger Documentation</title>
               <meta name="viewport" content="width=device-width, initial-scale=1">
-              <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css">
+              <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4/swagger-ui.css">
               <style>
                   html {
                       box-sizing: border-box;
@@ -131,34 +131,53 @@ jobs:
           </head>
           <body>
               <div id="swagger-ui"></div>
-              <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
-              <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+              <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4/swagger-ui-bundle.js"></script>
+              <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4/swagger-ui-standalone-preset.js"></script>
               <script>
                   window.onload = function() {
-                      // Get the base path from current URL
-                      const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
-                      const specUrl = basePath + '/openapi.json';
+                      // Use absolute URL for GitHub Pages
+                      const specUrl = 'https://weliot.github.io/Segundos_api/openapi.json';
                       
-                      console.log('Base path:', basePath);
-                      console.log('Spec URL:', specUrl);
+                      console.log('Loading OpenAPI spec from:', specUrl);
                       
-                      window.ui = SwaggerUIBundle({
-                          url: specUrl,
-                          dom_id: '#swagger-ui',
-                          deepLinking: true,
-                          presets: [
-                              SwaggerUIBundle.presets.apis,
-                              SwaggerUIStandalonePreset
-                          ],
-                          plugins: [
-                              SwaggerUIBundle.plugins.DownloadUrl
-                          ],
-                          layout: "StandaloneLayout",
-                          onFailure: function(error) {
-                              console.error('Failed to load spec:', error);
-                              document.body.innerHTML = '<h1>Error loading Swagger spec</h1><p>URL: ' + specUrl + '</p><p>' + error + '</p>';
-                          }
-                      });
+                      // Fetch spec to verify it's valid before passing to Swagger UI
+                      fetch(specUrl)
+                          .then(response => {
+                              if (!response.ok) {
+                                  throw new Error(`HTTP error! status: ${response.status}`);
+                              }
+                              return response.json();
+                          })
+                          .then(spec => {
+                              console.log('OpenAPI spec loaded successfully');
+                              console.log('OpenAPI version:', spec.openapi || spec.swagger);
+                              
+                              window.ui = SwaggerUIBundle({
+                                  spec: spec,
+                                  dom_id: '#swagger-ui',
+                                  deepLinking: true,
+                                  presets: [
+                                      SwaggerUIBundle.presets.apis,
+                                      SwaggerUIStandalonePreset
+                                  ],
+                                  plugins: [
+                                      SwaggerUIBundle.plugins.DownloadUrl
+                                  ],
+                                  layout: "StandaloneLayout"
+                              });
+                          })
+                          .catch(error => {
+                              console.error('Error loading OpenAPI spec:', error);
+                              document.body.innerHTML = `
+                                  <div style="padding: 20px; font-family: Arial;">
+                                      <h1>Error loading API Documentation</h1>
+                                      <p>Failed to load OpenAPI specification</p>
+                                      <p><strong>Error:</strong> ${error.message}</p>
+                                      <p><strong>URL:</strong> ${specUrl}</p>
+                                      <p><a href="./api-info.html">View API Information</a></p>
+                                  </div>
+                              `;
+                          });
                   };
               </script>
           </body>
@@ -367,9 +386,13 @@ jobs:
         if: github.ref == 'refs/heads/main' && success()
         run: |
           echo "✓ Deployment complete!"
+          echo ""
           echo "📍 Swagger UI available at: https://weliot.github.io/Segundos_api/"
-          echo "📄 API Documentation available at: https://weliot.github.io/Segundos_api/openapi.json"
+          echo "📄 OpenAPI JSON available at: https://weliot.github.io/Segundos_api/openapi.json"
           echo "ℹ️  API Info available at: https://weliot.github.io/Segundos_api/api-info.html"
+          echo ""
+          echo "Files deployed:"
+          ls -lh swagger-docs/ | grep -E "\.(html|json|yml)$"
 
       - name: Generate summary
         if: always()
