@@ -105,8 +105,57 @@ jobs:
           # Get full API docs
           curl -s http://localhost:8080/Segundos_api/api-docs > swagger-docs/openapi.json
           
-          # Create HTML report with Swagger UI info
-          cat > swagger-docs/swagger-report.html << 'EOF'
+          # Create Swagger UI HTML with embedded OpenAPI spec
+          cat > swagger-docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <title>Segundos API - Swagger Documentation</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css">
+              <style>
+                  html {
+                      box-sizing: border-box;
+                      overflow: -moz-scrollbars-vertical;
+                      overflow-y: scroll;
+                  }
+                  *, *:before, *:after {
+                      box-sizing: inherit;
+                  }
+                  body {
+                      margin: 0;
+                      padding: 0;
+                  }
+              </style>
+          </head>
+          <body>
+              <div id="swagger-ui"></div>
+              <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+              <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+              <script>
+                  window.onload = function() {
+                      window.ui = SwaggerUIBundle({
+                          url: "./openapi.json",
+                          dom_id: '#swagger-ui',
+                          deepLinking: true,
+                          presets: [
+                              SwaggerUIBundle.presets.apis,
+                              SwaggerUIStandalonePreset
+                          ],
+                          plugins: [
+                              SwaggerUIBundle.plugins.DownloadUrl
+                          ],
+                          layout: "StandaloneLayout"
+                      });
+                  };
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          # Also create the info HTML report
+          cat > swagger-docs/api-info.html << 'EOF'
           <!DOCTYPE html>
           <html>
           <head>
@@ -238,8 +287,6 @@ jobs:
                   </p>
               </div>
               
-              <script>
-                  document.getElementById('timestamp').textContent = new Date().toLocaleString();
               </script>
           </body>
           </html>
@@ -247,6 +294,16 @@ jobs:
           
           echo "✓ Swagger documentation collected"
           ls -lah swagger-docs/
+          
+          # Create .nojekyll to prevent GitHub from processing Jekyll
+          touch swagger-docs/.nojekyll
+          
+          # Create _config.yml for proper GitHub Pages configuration
+          cat > swagger-docs/_config.yml << 'EOF'
+          title: Segundos API Documentation
+          description: API documentation for Segundos project
+          remote_theme: null
+          EOF
 
       - name: Upload Swagger documentation as artifact
         if: success()
@@ -262,6 +319,16 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./swagger-docs
+          force_orphan: true
+          cname: false
+
+      - name: Verify GitHub Pages deployment
+        if: github.ref == 'refs/heads/main' && success()
+        run: |
+          echo "✓ Deployment complete!"
+          echo "📍 Swagger UI available at: https://weliot.github.io/Segundos_api/"
+          echo "📄 API Documentation available at: https://weliot.github.io/Segundos_api/openapi.json"
+          echo "ℹ️  API Info available at: https://weliot.github.io/Segundos_api/api-info.html"
 
       - name: Generate summary
         if: always()
