@@ -252,7 +252,7 @@ On Windows:
 mvnw.cmd spring-boot:run
 ```
 
-The application will start on `http://localhost:8080`
+The application will start on `http://localhost:8080/Segundos_api`
 
 ---
 
@@ -260,18 +260,18 @@ The application will start on `http://localhost:8080`
 
 ### 1. **Swagger UI (API Documentation)**
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/Segundos_api/swagger-ui.html
 ```
 Interactive API documentation where you can test all endpoints.
 
 ### 2. **API Docs (OpenAPI JSON)**
 ```
-http://localhost:8080/api-docs
+http://localhost:8080/Segundos_api/api-docs
 ```
 
 ### 3. **H2 Database Console**
 ```
-http://localhost:8080/h2-console
+http://localhost:8080/Segundos_api/h2-console
 ```
 Default credentials:
 - **Username**: sa
@@ -327,7 +327,7 @@ server.port=8081  # or any other available port
 ### Database Connection Errors
 For H2 database issues:
 1. Clear Maven cache: `./mvnw clean`
-2. Check H2 console at `http://localhost:8080/h2-console`
+2. Check H2 console at `http://localhost:8080/Segundos_api/h2-console`
 3. Verify JDBC URL: `jdbc:h2:mem:segundos`
 
 ### JWT Token Validation Failure
